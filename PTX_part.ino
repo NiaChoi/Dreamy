@@ -52,28 +52,26 @@ void loop() {
 
   if(cur_time-snd_time>3000){
     DHT.read11(DHTPIN);
+    iSendValue[0]=(int)DHT.temperature;
+    Serial.println(iSendValue[0]);
+    radio.stopListening();
+    radio.openWritingPipe(address[iNodeNum]);
+    int i=radio.write(&iSendValue, sizeof(iSendValue));
     
-  }
-  byte pipeNum = 0;
-  while(radio.available(&pipeNum)){
-    Serial.println("Here");
-    radio.read(&iRecvValue, sizeof(iRecvValue));
-    iTemp[iRecvValue[2]]=iRecvValue[0];
-    delay(200);
-    sendRecvOK(pipeNum);
-  }
-
-  for(int i=0; i<2; i++){
-    lcd.clear();
-    lcd.home();
-    String line1 ="R"+ String(i*2+1)+":"+ String(iTemp[i*2]);
-    lcd.print(line1);
-
-    if(i!=1){
-      String line2 = "R"+ String(i*2+2)+":"+ String(iTemp[i*2+1]);
-      lcd.setCursor(0,1);
-      lcd.print(line2);
+    if(i){
+      Serial.println("sent");
+      digitalWrite(LEDPIN, HIGH);
     }
-    delay(1000);
+    else{
+      Serial.printLn("fail");
+    }
+    snd_time=millis();
+    radio.startListening();
+  }
+  else{
+    if(radio.available()){
+      radio.read(&recv_flag, sizeof(recv_flag));
+      digitalWrite(LEDPIN, LOW);
+    }
   }        // delay in between reads for stability
 }
